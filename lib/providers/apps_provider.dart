@@ -849,7 +849,7 @@ class AppsProvider with ChangeNotifier {
       return false;
     }
 
-    if (settingsProvider.usePrivilegedInstaller) {
+    if (settingsProvider.useShizuku) {
       return true;
     }
 
@@ -866,14 +866,6 @@ class AppsProvider with ChangeNotifier {
       return false;
     }
     return true;
-  }
-
-  Future<void> _configurePrivilegedInstaller() async {
-    if (settingsProvider.useDhizuku) {
-      await ShizukuApkInstaller().setInstallerMode(InstallerMode.dhizuku);
-    } else if (settingsProvider.useShizuku) {
-      await ShizukuApkInstaller().setInstallerMode(InstallerMode.shizuku);
-    }
   }
 
   Future<void> waitForUserToReturnToForeground(BuildContext context) async {
@@ -1018,14 +1010,13 @@ class AppsProvider with ChangeNotifier {
       ], attemptToCorrectInstallStatus: false);
     }
     int? code;
-    if (!settingsProvider.usePrivilegedInstaller) {
+    if (!settingsProvider.useShizuku) {
       var allAPKs = [file.file.path];
       allAPKs.addAll(additionalAPKs.map((a) => a.file.path));
       code = await AndroidPackageInstaller.installApk(
         apkFilePath: allAPKs.join(','),
       );
     } else {
-      await _configurePrivilegedInstaller();
       code = await ShizukuApkInstaller().installAPK(
         file.file.uri.toString(),
         shizukuPretendToBeGooglePlay ? "com.android.vending" : "",
@@ -1232,9 +1223,8 @@ class AppsProvider with ChangeNotifier {
         var contextIfNewInstall = apps[id]?.installedInfo == null
             ? context
             : null;
-        bool needBGWorkaround = willBeSilent &&
-            context == null &&
-            !settingsProvider.usePrivilegedInstaller;
+        bool needBGWorkaround =
+            willBeSilent && context == null && !settingsProvider.useShizuku;
         bool shizukuPretendToBeGooglePlay =
             settingsProvider.shizukuPretendToBeGooglePlay ||
             apps[id]!.app.additionalSettings['shizukuPretendToBeGooglePlay'] ==
@@ -1274,7 +1264,7 @@ class AppsProvider with ChangeNotifier {
           }
         }
         if (willBeSilent && context == null) {
-          if (!settingsProvider.usePrivilegedInstaller) {
+          if (!settingsProvider.useShizuku) {
             notificationsProvider?.notify(
               SilentUpdateAttemptNotification([apps[id]!.app], id: id.hashCode),
             );
@@ -1322,34 +1312,23 @@ class AppsProvider with ChangeNotifier {
         }
         id = downloadedFile?.appId ?? downloadedDir!.appId;
         willBeSilent = await canInstallSilently(apps[id]!.app);
-        if (!settingsProvider.usePrivilegedInstaller) {
+        if (!settingsProvider.useShizuku) {
           if (!(await settingsProvider.getInstallPermission(enforce: false))) {
             throw ObtainiumError(tr('cancelled'));
           }
         } else {
-          await _configurePrivilegedInstaller();
           switch ((await ShizukuApkInstaller().checkPermission())!) {
             case 'services_not_found':
-              throw ObtainiumError(
-                settingsProvider.useDhizuku
-                    ? tr('dhizukuBinderNotFound')
-                    : tr('shizukuBinderNotFound'),
-              );
+              throw ObtainiumError(tr('shizukuBinderNotFound'));
             case 'old_shizuku':
               throw ObtainiumError(tr('shizukuOld'));
             case 'old_android_with_adb':
               throw ObtainiumError(tr('shizukuOldAndroidWithADB'));
             case 'denied':
-              throw ObtainiumError(
-                settingsProvider.useDhizuku
-                    ? tr('dhizukuPermissionDenied')
-                    : tr('cancelled'),
-              );
+              throw ObtainiumError(tr('cancelled'));
           }
         }
-        if (!willBeSilent &&
-            context != null &&
-            !settingsProvider.usePrivilegedInstaller) {
+        if (!willBeSilent && context != null && !settingsProvider.useShizuku) {
           // ignore: use_build_context_synchronously
           await waitForUserToReturnToForeground(context);
         }
