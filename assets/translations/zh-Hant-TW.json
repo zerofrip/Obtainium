@@ -303,6 +303,7 @@
     "shizukuBinderNotFound": "Shizuku 服務未運作",
     "shizukuOld": "舊版 Shizuku (<11) - 請更新",
     "shizukuOldAndroidWithADB": "Shizuku 在 Android 8.1 以下版本使用 ADB 執行 - 請更新 Android 或改用 Sui",
+    "dhizukuNotActivatedUsingShizuku": "Dhizuku is not activated as Device Owner, so Shizuku is being used instead. Activate Dhizuku in the Dhizuku app to use it.",
     "shizukuPretendToBeGooglePlay": "設定 Google Play 為安裝來源（如果使用 Shizuku）",
     "useSystemFont": "使用系統字型",
     "useVersionCodeAsOSVersion": "使用應用程式 versionCode 作為作業系統偵測的版本",
